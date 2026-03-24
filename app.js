@@ -213,26 +213,78 @@ function renderItems() {
   }
   body.innerHTML = html;
 
-  body.querySelectorAll('.item-row').forEach(row => {
-    const idx = parseInt(row.dataset.idx);
+  body.querySelectorAll('.item-wrap').forEach(wrap => {
+    const idx = parseInt(wrap.dataset.idx);
+    const row = wrap.querySelector('.item-row');
+
     row.querySelector('.checkbox').addEventListener('click', () => toggleItem(idx));
     row.querySelector('.item-del').addEventListener('click', () => deleteItem(idx));
     const label = row.querySelector('.item-label');
     if (label) label.addEventListener('dblclick', () => startEditItem(idx));
 
+    // drag to reorder
     row.addEventListener('dragstart', e => { dragItemIdx = idx; row.classList.add('dragging-item'); e.dataTransfer.effectAllowed = 'move'; });
     row.addEventListener('dragend', () => body.querySelectorAll('.item-row').forEach(r => r.classList.remove('dragging-item','drag-over-item')));
     row.addEventListener('dragover', e => { e.preventDefault(); body.querySelectorAll('.item-row').forEach(r => r.classList.remove('drag-over-item')); row.classList.add('drag-over-item'); });
     row.addEventListener('drop', e => { e.preventDefault(); dropItem(idx); });
+
+    // swipe to delete
+    let startX = 0, startY = 0, currentX = 0, swiping = false, locked = false;
+    const THRESHOLD = 80;
+
+    wrap.addEventListener('touchstart', e => {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      currentX = 0; swiping = false; locked = false;
+      row.style.transition = 'none';
+    }, { passive: true });
+
+    wrap.addEventListener('touchmove', e => {
+      const dx = e.touches[0].clientX - startX;
+      const dy = e.touches[0].clientY - startY;
+      if (!locked) {
+        if (Math.abs(dy) > Math.abs(dx)) { locked = true; return; }
+        if (Math.abs(dx) > 6) { swiping = true; locked = true; }
+      }
+      if (!swiping) return;
+      e.preventDefault();
+      currentX = Math.min(0, dx);
+      const pct = Math.min(1, Math.abs(currentX) / THRESHOLD);
+      row.style.transform = `translateX(${currentX}px)`;
+      wrap.querySelector('.swipe-delete-bg').style.opacity = pct;
+    }, { passive: false });
+
+    wrap.addEventListener('touchend', () => {
+      if (!swiping) return;
+      row.style.transition = 'transform 0.25s cubic-bezier(0.4,0,0.2,1)';
+      if (Math.abs(currentX) >= THRESHOLD) {
+        row.style.transform = `translateX(-110%)`;
+        wrap.style.transition = 'max-height 0.28s ease, opacity 0.2s ease, margin 0.28s ease';
+        wrap.style.maxHeight = wrap.offsetHeight + 'px';
+        wrap.style.overflow = 'hidden';
+        setTimeout(() => {
+          wrap.style.maxHeight = '0';
+          wrap.style.opacity = '0';
+          wrap.style.marginBottom = '0';
+        }, 20);
+        setTimeout(() => deleteItem(idx), 320);
+      } else {
+        row.style.transform = 'translateX(0)';
+        wrap.querySelector('.swipe-delete-bg').style.opacity = 0;
+      }
+    }, { passive: true });
   });
 }
 
 function itemHTML(item, idx, faded) {
-  return `<div class="item-row" draggable="true" data-idx="${idx}" style="${faded?'opacity:0.45':''}">
-    <div class="drag-pip"><span></span><span></span><span></span></div>
-    <div class="checkbox${item.done?' checked':''}"></div>
-    <span class="item-label${item.done?' done':''}">${escHtml(item.text)}</span>
-    <button class="item-del">✕</button>
+  return `<div class="item-wrap" data-idx="${idx}" style="${faded?'opacity:0.45':''}">
+    <div class="swipe-delete-bg"><span>Delete</span></div>
+    <div class="item-row" draggable="true" data-idx="${idx}">
+      <div class="drag-pip"><span></span><span></span><span></span></div>
+      <div class="checkbox${item.done?' checked':''}"></div>
+      <span class="item-label${item.done?' done':''}">${escHtml(item.text)}</span>
+      <button class="item-del">&#x2715;</button>
+    </div>
   </div>`;
 }
 
@@ -333,6 +385,19 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(console.warn);
+    navigator.serviceWorker.register('./sw.js').then(reg => {
+      reg.addEventListener('updatefound', () => {
+        const newSW = reg.installing;
+        newSW.addEventListener('statechange', () => {
+          if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+            newSW.postMessage({ type: 'SKIP_WAITING' });
+          }
+        });
+      });
+    }).catch(console.warn);
+
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      window.location.reload();
+    });
   }
 });
