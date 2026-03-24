@@ -233,6 +233,25 @@ html, body {
   letter-spacing: 0.07em; color: var(--text-3); margin: 16px 0 6px 4px;
 }
 
+.item-wrap {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+}
+.swipe-delete-bg {
+  position: absolute; inset: 0;
+  background: var(--danger);
+  display: flex; align-items: center; justify-content: flex-end;
+  padding-right: 20px;
+  border-radius: var(--radius-sm);
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+.swipe-delete-bg span {
+  color: #fff; font-size: 14px; font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
 .item-row {
   display: flex; align-items: center; gap: 12px;
   padding: 11px 12px; border-radius: var(--radius-sm);
