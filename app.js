@@ -229,44 +229,48 @@ function renderItems() {
     row.addEventListener('drop', e => { e.preventDefault(); dropItem(idx); });
 
     // swipe to delete
-    let startX = 0, startY = 0, currentX = 0, swiping = false, locked = false;
-    const THRESHOLD = 80;
+    let startX = 0, startY = 0, currentX = 0;
+    let direction = null; // 'h' horizontal, 'v' vertical, null undecided
+    const THRESHOLD = 72;
+    const DECIDE_PX = 8;
 
     wrap.addEventListener('touchstart', e => {
       startX = e.touches[0].clientX;
       startY = e.touches[0].clientY;
-      currentX = 0; swiping = false; locked = false;
+      currentX = 0; direction = null;
       row.style.transition = 'none';
     }, { passive: true });
 
     wrap.addEventListener('touchmove', e => {
       const dx = e.touches[0].clientX - startX;
       const dy = e.touches[0].clientY - startY;
-      if (!locked) {
-        if (Math.abs(dy) > Math.abs(dx)) { locked = true; return; }
-        if (Math.abs(dx) > 6) { swiping = true; locked = true; }
+
+      // Decide direction once we've moved enough
+      if (!direction) {
+        if (Math.abs(dx) < DECIDE_PX && Math.abs(dy) < DECIDE_PX) return;
+        direction = Math.abs(dx) >= Math.abs(dy) ? 'h' : 'v';
       }
-      if (!swiping) return;
+
+      if (direction === 'v') return; // let the page scroll naturally
+
+      // Horizontal swipe — take full control
       e.preventDefault();
-      currentX = Math.min(0, dx);
+      e.stopPropagation();
+      currentX = Math.min(0, dx); // left only
       const pct = Math.min(1, Math.abs(currentX) / THRESHOLD);
       row.style.transform = `translateX(${currentX}px)`;
       wrap.querySelector('.swipe-delete-bg').style.opacity = pct;
     }, { passive: false });
 
     wrap.addEventListener('touchend', () => {
-      if (!swiping) return;
+      if (direction !== 'h') return;
       row.style.transition = 'transform 0.25s cubic-bezier(0.4,0,0.2,1)';
       if (Math.abs(currentX) >= THRESHOLD) {
         row.style.transform = `translateX(-110%)`;
-        wrap.style.transition = 'max-height 0.28s ease, opacity 0.2s ease, margin 0.28s ease';
+        wrap.style.transition = 'max-height 0.28s ease, opacity 0.2s ease';
         wrap.style.maxHeight = wrap.offsetHeight + 'px';
         wrap.style.overflow = 'hidden';
-        setTimeout(() => {
-          wrap.style.maxHeight = '0';
-          wrap.style.opacity = '0';
-          wrap.style.marginBottom = '0';
-        }, 20);
+        setTimeout(() => { wrap.style.maxHeight = '0'; wrap.style.opacity = '0'; }, 20);
         setTimeout(() => deleteItem(idx), 320);
       } else {
         row.style.transform = 'translateX(0)';
