@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="My Lists" />
+  <meta name="theme-color" content="#FAFAF8" />
+  <title>My Lists</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div id="app">
+
+  <!-- ── Home view ── -->
+  <div class="view active" id="home-view">
+    <div class="home-header">
+      <h1>My Lists</h1>
+      <p class="subtitle">Tap a list to open it</p>
+    </div>
+    <div class="lists-container" id="lists-container"></div>
+  </div>
+
+  <!-- ── Detail view ── -->
+  <div class="view" id="detail-view">
+    <div class="detail-header">
+      <div class="detail-header-top">
+        <button class="back-btn" id="back-btn">&#8592;</button>
+        <div class="detail-title-wrap">
+          <span class="detail-icon" id="detail-icon"></span>
+          <span class="detail-title" id="detail-title" title="Tap to rename"></span>
+          <input class="detail-title-input" id="detail-title-input" style="display:none" />
+        </div>
+        <button class="done-peek" id="done-peek"></button>
+      </div>
+      <div class="tabs-row" id="tabs-row"></div>
+    </div>
+    <div class="items-body" id="items-body"></div>
+  </div>
+
+  <!-- ── FAB ── -->
+  <button class="fab" id="fab" aria-label="New list">+</button>
+
+  <!-- ── Entry bar ── -->
+  <div class="entry-bar" id="entry-bar" style="display:none">
+    <input class="entry-input" id="entry-input" type="text" placeholder="Add an item…" autocomplete="off" />
+    <button class="entry-add" id="entry-add">Add</button>
+  </div>
+
+</div>
+
+<!-- ── New list sheet ── -->
+<div class="overlay" id="new-list-overlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h2>New list</h2>
+    <div class="field">
+      <label>Name</label>
+      <input id="nl-name" type="text" placeholder="e.g. Weekend Projects" />
+    </div>
+    <div class="field">
+      <label>Icon</label>
+      <div class="icon-picker" id="nl-icons"></div>
+    </div>
+    <div class="field">
+      <label>Category</label>
+      <select id="nl-cat">
+        <option value="household">Household</option>
+        <option value="tasks">Tasks</option>
+        <option value="gifts">Gifts</option>
+        <option value="media">Books &amp; Movies</option>
+        <option value="hardware">Hardware Store</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" id="nl-cancel">Cancel</button>
+      <button class="btn btn-primary" id="nl-create">Create list</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Delete confirm sheet ── -->
+<div class="overlay" id="del-overlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h2>Delete list?</h2>
+    <p class="confirm-text" id="del-msg"></p>
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" id="del-cancel">Cancel</button>
+      <button class="btn btn-danger" id="del-confirm">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
